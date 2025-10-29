@@ -1,10 +1,11 @@
-
 import express, { Express } from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // --- Import the route files ---
 import authRoutes from './routes/auth';
@@ -14,30 +15,38 @@ import chatRoutes from './routes/chat';
 // Load environment variables from .env file
 dotenv.config();
 
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app: Express = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 5000;
 
 // --- Middleware Setup ---
-app.use(cors()); // Enables Cross-Origin Resource Sharing
-app.use(helmet()); // Sets various security-related HTTP headers
-app.use(morgan('dev')); // Logs HTTP requests to the console for debugging
-app.use(express.json()); // Parses incoming JSON requests and puts the parsed data in req.body
+// Configure CORS for development and production
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? process.env.FRONTEND_URL 
+        : true,
+    credentials: true
+}));
 
-// --- Root route ---
-app.get('/', (req, res) => {
-    res.json({
-        message: 'AI Therapist Backend Server is running!',
-        status: 'success',
-        timestamp: new Date().toISOString(),
-        availableRoutes: [
-            '/api/auth - Authentication endpoints',
-            '/api/chat - Chat endpoints'
-        ]
-    });
-});
+// Configure helmet to allow serving the SPA
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
+}));
+
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// --- API Routes (must come before static files) ---
+app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);
 
 // --- Health check route ---
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
         uptime: process.uptime(),
@@ -45,31 +54,53 @@ app.get('/health', (req, res) => {
     });
 });
 
-// --- NEW: Connect the routes to the application ---
-// Any request starting with '/api/auth' will be handled by our authRoutes.
-app.use('/api/auth', authRoutes);
-// Any request starting with '/api/chat' will be handled by our chatRoutes.
-app.use('/api/chat', chatRoutes);
-// --------------------------------------------------
+// --- Serve Frontend Build Files ---
+const distPath = path.join(__dirname, '..', 'dist', 'public');
+app.use(express.static(distPath));
+
+// --- Catch-all route to serve index.html for client-side routing ---
+app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // --- Database Connection ---
 const mongoUri = process.env.MONGO_URI;
 
-if (!mongoUri) {
-    console.error('FATAL ERROR: MONGO_URI is not defined.');
-    process.exit(1);
-}
-
-mongoose.connect(mongoUri)
-    .then(() => {
-        console.log('MongoDB connected successfully.');
-        // --- Start the Server ---
-        // We only start the server after a successful database connection.
-        app.listen(port, () => {
-            console.log(`Server is running on port ${port}`);
-        });
-    })
-    .catch((err) => {
-        console.error('MongoDB connection error:', err);
-        process.exit(1);
+// Function to start the server
+const startServer = () => {
+    app.listen(port, () => {
+        console.log(`
+╔═══════════════════════════════════════════════════════════╗
+║  🚀 Kairo Mental Health Platform Server                  ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   ║
+║  Server: http://localhost:${port}                            ║
+║  Environment: ${process.env.NODE_ENV || 'development'}                                  ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   ║
+║  API Endpoints:                                           ║
+║    • POST /api/auth/register - User registration          ║
+║    • POST /api/auth/login - User login                    ║
+║    • POST /api/chat/session - Create chat session         ║
+║    • POST /api/chat/:sessionId/message - Send message     ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   ║
+╚═══════════════════════════════════════════════════════════╝
+        `);
     });
+};
+
+// Connect to MongoDB if URI is provided, otherwise start without DB
+if (mongoUri) {
+    mongoose.connect(mongoUri)
+        .then(() => {
+            console.log('✅ MongoDB connected successfully.');
+            startServer();
+        })
+        .catch((err) => {
+            console.error('❌ MongoDB connection error:', err.message);
+            console.log('⚠️  Starting server without database...');
+            startServer();
+        });
+} else {
+    console.log('⚠️  MONGO_URI not defined. Starting server without database...');
+    console.log('   Note: Authentication and chat features require MongoDB.');
+    startServer();
+}

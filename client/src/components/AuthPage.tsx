@@ -7,27 +7,65 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLocation } from 'wouter';
 import { usePlan } from '@/contexts/PlanContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import kairoLogo from '@assets/Logo_Kairo_Final-removebg-preview_1761680007331.png';
 import { ArrowLeft } from 'lucide-react';
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { plan } = usePlan();
+  const { login, register } = useAuth();
+  const { toast } = useToast();
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({ name: '', email: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login:', loginData);
-    const destination = plan === 'pro' ? '/pro' : plan === 'free' ? '/free' : '/select-plan';
-    setLocation(destination);
+    setIsLoading(true);
+    
+    try {
+      await login(loginData.email, loginData.password);
+      toast({
+        title: 'Welcome back!',
+        description: 'Successfully logged in.',
+      });
+      const destination = plan === 'pro' ? '/pro' : plan === 'free' ? '/free' : '/select-plan';
+      setLocation(destination);
+    } catch (error: any) {
+      toast({
+        title: 'Login failed',
+        description: error.message || 'Invalid email or password.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Signup:', signupData);
-    const destination = plan === 'pro' ? '/pro' : plan === 'free' ? '/free' : '/select-plan';
-    setLocation(destination);
+    setIsLoading(true);
+    
+    try {
+      await register(signupData.name, signupData.email, signupData.password);
+      toast({
+        title: 'Account created!',
+        description: 'Please log in to continue.',
+      });
+      await login(signupData.email, signupData.password);
+      const destination = plan === 'pro' ? '/pro' : plan === 'free' ? '/free' : '/select-plan';
+      setLocation(destination);
+    } catch (error: any) {
+      toast({
+        title: 'Signup failed',
+        description: error.message || 'Could not create account.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -91,8 +129,8 @@ export default function AuthPage() {
                     data-testid="input-login-password"
                   />
                 </div>
-                <Button type="submit" className="w-full" data-testid="button-login">
-                  Login
+                <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-login">
+                  {isLoading ? 'Logging in...' : 'Login'}
                 </Button>
               </form>
             </TabsContent>
@@ -135,8 +173,8 @@ export default function AuthPage() {
                     data-testid="input-signup-password"
                   />
                 </div>
-                <Button type="submit" className="w-full" data-testid="button-signup">
-                  Sign Up
+                <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-signup">
+                  {isLoading ? 'Creating account...' : 'Sign Up'}
                 </Button>
               </form>
             </TabsContent>

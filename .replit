@@ -1,6 +1,7 @@
 modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
+integrations = ["javascript_gemini:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
@@ -15,15 +16,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Dev Server"
+args = "Kairo Full Stack"
 
 [[workflows.workflow]]
-name = "Dev Server"
+name = "Kairo Full Stack"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "npm start"
 waitForPort = 5000
 
 [workflows.workflow.metadata]

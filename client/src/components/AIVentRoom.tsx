@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MessageCircle, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: number;
@@ -21,18 +24,42 @@ export default function AIVentRoom({ isPro = false }: AIVentRoomProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello! I'm here to listen. Feel free to share what's on your mind.",
+      text: "Hello! I'm Aura, your AI therapist. I'm here to listen. Feel free to share what's on your mind.",
       sender: 'ai',
       timestamp: new Date()
     }
   ]);
   const [input, setInput] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    const initSession = async () => {
+      if (user) {
+        try {
+          const response = await api.chat.createSession(user.id);
+          setSessionId(response.sessionId);
+        } catch (error: any) {
+          console.error('Failed to create chat session:', error);
+          toast({
+            title: 'Connection Error',
+            description: 'Unable to connect to AI chat service.',
+            variant: 'destructive',
+          });
+        }
+      }
+    };
+
+    initSession();
+  }, [user, toast]);
+
+  const handleSend = async () => {
+    if (!input.trim() || !user || !sessionId) return;
 
     const userMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now(),
       text: input,
       sender: 'user',
       timestamp: new Date()
@@ -40,16 +67,35 @@ export default function AIVentRoom({ isPro = false }: AIVentRoomProps) {
 
     setMessages([...messages, userMessage]);
     setInput('');
+    setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await api.chat.sendMessage(sessionId, user.id, input);
+
       const aiResponse: Message = {
-        id: messages.length + 2,
-        text: "I hear you. That sounds challenging. Remember, it's okay to feel this way, and you're taking a positive step by sharing. Would you like to talk more about this?",
+        id: Date.now() + 1,
+        text: response.response,
         sender: 'ai',
         timestamp: new Date()
       };
+
       setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: 'Message Failed',
+        description: error.message || 'Unable to send message. Please try again.',
+        variant: 'destructive',
+      });
+      
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
+        sender: 'ai',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -97,6 +143,17 @@ export default function AIVentRoom({ isPro = false }: AIVentRoomProps) {
               </div>
             </motion.div>
           ))}
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 flex justify-start"
+            >
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-muted">
+                <p className="text-sm text-muted-foreground">Aura is typing...</p>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </ScrollArea>
 
@@ -104,13 +161,14 @@ export default function AIVentRoom({ isPro = false }: AIVentRoomProps) {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSend()}
           placeholder="Type your message..."
+          disabled={isLoading}
           data-testid="input-message"
         />
         <Button
           onClick={handleSend}
-          disabled={!input.trim()}
+          disabled={!input.trim() || isLoading}
           size="icon"
           data-testid="button-send"
         >

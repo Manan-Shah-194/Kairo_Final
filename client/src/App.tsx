@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PlanProvider } from "@/contexts/PlanContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import LandingPage from "@/components/LandingPage";
 import ServicesComparison from "@/components/ServicesComparison";
 import AuthPage from "@/components/AuthPage";
@@ -25,11 +27,31 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/services" component={ServicesComparison} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/select-plan" component={DualOptionPage} />
-      <Route path="/free" component={FreePlanDashboard} />
-      <Route path="/pro" component={ProPlanDashboard} />
-      <Route path="/assessments" component={Assessments} />
-      <Route path="/therapist-matching" component={TherapistMatchingQuestionnaire} />
+      <Route path="/select-plan">
+        <ProtectedRoute>
+          <DualOptionPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/free">
+        <ProtectedRoute>
+          <FreePlanDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/pro">
+        <ProtectedRoute>
+          <ProPlanDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/assessments">
+        <ProtectedRoute>
+          <Assessments />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/therapist-matching">
+        <ProtectedRoute>
+          <TherapistMatchingQuestionnaire />
+        </ProtectedRoute>
+      </Route>
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/help-center" component={HelpCenter} />
@@ -43,12 +65,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <PlanProvider>
-          <Toaster />
-          <Router />
-        </PlanProvider>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <PlanProvider>
+            <Toaster />
+            <Router />
+          </PlanProvider>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

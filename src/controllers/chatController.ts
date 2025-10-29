@@ -2,23 +2,28 @@ import { Request, Response } from 'express';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { v4 as uuidv4 } from 'uuid';
 
-// ✅ Use default imports from guarded model files
 import Chat from '../models/Chat';
 import User from '../models/user';
 
 import mongoose from 'mongoose';
 
 // Get API key from environment variables
-const apiKey = process.env.GEMINI_API_KEY || "AIzaSyAUX93NRdIbX3Ewfpcrlytbg9f5FbxkzDI";
-console.log('Using Gemini API key:', apiKey.substring(0, 5) + '...');
-const genAI = new GoogleGenerativeAI(apiKey);
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+    console.error('⚠️  GEMINI_API_KEY is not defined in environment variables');
+    console.log('   Note: AI chat features require a Gemini API key.');
+}
+
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 /**
  * Creates a new, empty chat session for a user.
  */
 export const createChatSession = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
+    // Get userId from authenticated request (set by authMiddleware)
+    const userId = req.userId || req.body.userId;
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' });
@@ -52,8 +57,16 @@ export const createChatSession = async (req: Request, res: Response) => {
  */
 export const sendMessage = async (req: Request, res: Response) => {
   try {
+    if (!genAI) {
+      return res.status(503).json({ 
+        message: 'AI service is not configured. Please contact administrator.' 
+      });
+    }
+
     const { sessionId } = req.params;
-    const { message, userId } = req.body;
+    const { message } = req.body;
+    // Get userId from authenticated request (set by authMiddleware)
+    const userId = req.userId || req.body.userId;
 
     if (!message || !userId) {
       return res.status(400).json({ message: 'User ID and message are required.' });
