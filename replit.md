@@ -3,8 +3,8 @@
 ## Overview
 A personal companion application for emotional wellness and mental health support. Built as a frontend-only Single Page Application (SPA) with React and TypeScript.
 
-**Current State**: Fully configured and running in Replit environment
-**Last Updated**: October 29, 2025
+**Current State**: Fresh GitHub clone - fully configured and running in Replit environment
+**Last Updated**: October 29, 2025 (Fresh Import)
 
 ## Project Architecture
 
@@ -32,6 +32,8 @@ A personal companion application for emotional wellness and mental health suppor
 ```
 
 **Note**: This is a frontend-only application. There is no backend server or database integration. All data is managed client-side using React state and context.
+
+**Legacy Backend Code**: The `src/` directory contains legacy Express/MongoDB backend code that is not currently active or used. The project uses Drizzle ORM with PostgreSQL schema definitions in `shared/schema.ts` for potential future backend integration, but no database is currently provisioned or required for the frontend-only functionality.
 
 ## Configuration
 
@@ -96,7 +98,30 @@ Based on the components structure, the app includes:
 ## Recent Changes
 **October 29, 2025**
 
-### Fresh GitHub Clone Import - Replit Setup (Latest)
+### Fresh GitHub Clone - Replit Environment Setup (Latest)
+- Imported project as fresh clone from GitHub repository
+- Installed all npm dependencies (478 packages via `npm install`)
+- Created missing frontend files:
+  - `client/src/main.tsx` - React application entry point
+  - `client/src/index.css` - Tailwind CSS global styles with theme variables
+  - `client/src/lib/queryClient.ts` - TanStack Query client configuration
+  - `client/src/lib/utils.ts` - Utility functions (cn helper for class merging)
+  - `client/src/pages/not-found.tsx` - 404 error page component
+- Fixed asset organization:
+  - Copied `Screenshot_2025-10-28_at_12.16.32_PM-removebg-preview_1761714308881.jpeg` to `attached_assets/` as PNG
+  - Ensured all logo and image assets are properly accessible via `@assets` alias
+- Created `.gitignore` file with Node.js best practices
+- Configured "Dev Server" workflow to run `npm run dev` on port 5000 with webview output
+- Configured deployment for Replit Autoscale:
+  - Build command: `npm run build`
+  - Run command: `npm start`
+  - Target: autoscale (stateless frontend SPA)
+- Verified Vite dev server starts successfully on port 5000
+- Verified frontend loads correctly with landing page displaying Kairo branding
+- Application fully functional and running in Replit environment
+- **Note**: Legacy backend code in `src/` directory is not active (MongoDB/Express dependencies not installed)
+
+### Fresh GitHub Clone Import - Replit Setup
 - Imported project as fresh clone from GitHub to Replit environment
 - Installed all npm dependencies (478 packages via npm install)
 - Created `.gitignore` file with Node.js best practices (node_modules, dist, env files, IDE files, etc.)
