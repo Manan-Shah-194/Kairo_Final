@@ -1,45 +1,23 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
+  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
-    // File Layout
-    "rootDir": "src",
-    "outDir": "dist",
-
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "commonjs",
-    "target": "es2020",
-    "types": ["node"],
-    "lib": ["es2020"],
-
-    // Other Outputs
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
-
-    // Recommended Options
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
+    "noEmit": true,
+    "module": "ESNext",
     "strict": true,
-    "verbatimModuleSyntax": false,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "skipLibCheck": true,
-
-    // Module Resolution
-    "moduleResolution": "node",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "jsx": "preserve",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@/*": ["./client/src/*"],
+      "@shared/*": ["./shared/*"]
+    }
   }
 }
