@@ -1,5 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express, { Express } from 'express';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -11,9 +13,6 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth';
 import chatRoutes from './routes/chat';
 // ---------------------------------------------
-
-// Load environment variables from .env file
-dotenv.config();
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
